@@ -4,17 +4,7 @@
 #include <math.h>
 #include <stdbool.h>
 
-/* Note: This is the code for using random parallel successive convex approximation (RPSCA) for solving group Lasso problem
-The paper can be found here:
-http://arxiv.org/abs/1406.3665  */
 
-
-/* Solve lasso problem min 0.5*|b-Ax|_F^2 + lambda * |x|_1  
-  Optimization variable is x
-  x dimension n x 1
-  b dimension m x 1
-  A dimension m x n
- (c) Meisam Razaviyayn */
 void MatMatProd(int m, int n, int k, int *A, double *B, double *AB);
 void MatMatProdBinaryA(int m, int n, int k, bool *A, double *B, double *AB);
 void getAB(bool *A, int *B,int n,int blcklngth,int M,int D,int K,int my_rank);
@@ -66,22 +56,6 @@ int main(int argc, char **argv)
  
     getAB(A, B, n,blcklngth, M,D,K,my_rank);
 
-/*
-    if (my_rank ==2)
-    {
-        for (i=0;i<n;i++)
-        {
-            for (j=0;j<D*M;j++)
-            {
-                if (A[i+n*j]==true)
-                    printf("1 ");
-                else
-                    printf("0 ");
-            }
-            printf("\n");
-        }
-    }
-*/
 
 
     double *AXsum;
@@ -214,20 +188,7 @@ int main(int argc, char **argv)
             for(j=0;j<K;j++)
                 Zd[i+M*j] = Xd[i+j*M] - 1/tau *Zd[i+M*j];
         shrink(lambda,tau,M,K,Zd,Xdnew);
-/*
-        if ((my_rank ==0)&&(iter ==0)&&(d==1))
-        {
-            for (i=0;i<M;i++)
-            {
-                for (j=0;j<K;j++)
-                {
-                    printf("%.6f ",Xdnew[i+M*j]);
-                }
-                printf("\n");
-            }
-        }
 
-*/
 
         for(i=0;i<M;i++)
             for(j=0;j<K;j++)
@@ -243,22 +204,7 @@ int main(int argc, char **argv)
                 AXsum_loc[i+j*n] = AXsum_loc[i+j*n] +tempAXsum[i+j*n];
     }
 
-/*
-  
-    if (my_rank == 1)
-    {
- //       MatMatProd( 10,  10,  4,  A,  B,  AB);
 
-        for (i=0;i<n;i++)
-        {
-            for (j=0;j<D*M;j++)
-            {
-                printf("%d ",A[i+n*j]);
-            }
-            printf("\n");
-        }
-    }
-    */
 
 
     if(my_rank == 0)
