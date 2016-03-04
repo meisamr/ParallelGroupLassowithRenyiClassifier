@@ -6,13 +6,21 @@
 
 
 void MatMatProd(int m, int n, int k, int *A, double *B, double *AB);
+// Matrix Matrix Product. A is in R^{mxn} and B is in R^{nxk}
 void MatMatProdBinaryA(int m, int n, int k, bool *A, double *B, double *AB);
+// Matrix Matrix Product. A is in R^{mxn} and B is in R^{nxk}. It is for the case where A is binary matrix 
+// no floating point multiplication, only summations for this function
 void getAB(bool *A, int *B,int n,int blcklngth,int M,int D,int K,int my_rank);
+// To obtain A and B matrix in Renyi Classifier, 
+// A is the Feature Vector data and B is the indication encoding of Labels (you can multi-class classification (more than binary))
 void shrink(double lambda,double tau,int n, int m, double *Z,double *ZShrinked);
+// Shrinkage operator for the matrix Z, the output is in ZShrinked
 double CalcFrobNorm(int n,int m,double *Z);
+// Calculating the Frobenius norm of Z
 
 const int MAX_ITER  = 30000;
 const double lambda = 30000;
+// Lambda variable in Group lasso
 const double tau = 5000;
 const double stepsize = .9;
 const double epsilon = 1e-4;
@@ -28,23 +36,32 @@ int main(int argc, char **argv)
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size );
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
+    
+    // Obtaining the input dimensions
+    // n : number of samples
+    // D_total: total number of features
+    // K: Number of classes/Labels
+    // M: Alphabet size for feature variables
     fp  = fopen("./Data/dimensions.txt","r");
     fscanf (fp, "%d", &K);
     fscanf (fp, "%d", &D_total);
     fscanf (fp, "%d", &n);
     fscanf (fp, "%d", &M);
     fclose(fp);
-    //printf("K = %d\n D = %d\n n = %d\n M = %d\n",K,D_total,n,M);
 
+
+    // Finding the local dimension of the feature vector A
     blcklngth = (int) ceil((D_total+0.0)/size);
     if (my_rank < size-1)
         D = blcklngth;
     else
         D = (D_total - my_rank*blcklngth);  // Each core number of variables
 
+    // Reading the local feature vector
     bool *A;
     A = (bool*) calloc(n*M*D,sizeof(bool));
+    
+    // Reading the labels
     int *B;
     B = (int*) calloc(n*K,sizeof(int));
 
@@ -53,7 +70,7 @@ int main(int argc, char **argv)
         printf("Reading matrix A and B...\n");
     MPI_Barrier(MPI_COMM_WORLD);
 
- 
+    // Read matrices A, B
     getAB(A, B, n,blcklngth, M,D,K,my_rank);
 
 
@@ -93,7 +110,7 @@ int main(int argc, char **argv)
             X[i+M*D*j] = 0;
 
 
-
+    // For computing AXsum
     for(d=0;d<D;d++)
     {   
         for(i=0;i<M;i++)
@@ -118,6 +135,8 @@ int main(int argc, char **argv)
         fprintf(fp,"ObjValues = [ \n");
     }
     
+    
+    // The algorithm iterations starts here
     for(iter=0;iter<MAX_ITER;iter++)
     {
         if((iter > 2)&&((iter%10000)==0))
@@ -213,6 +232,7 @@ int main(int argc, char **argv)
         fclose(fp);
     }
 
+    // writing the output
     mkdir("./Data/XMatrices/",0777);
     sprintf(s,"./Data/XMatrices/Indices%d",my_rank);
     fp = fopen(s,"w");
